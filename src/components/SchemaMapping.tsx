@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,21 @@ import { Database, MapPin, Calendar, TrendingUp, Tag, AlertTriangle, CheckCircle
 import { toast } from "sonner";
 
 interface SchemaMappingProps {
-  uploadedData: any;
+  uploadedData: {
+    name: string;
+    size: number;
+    type: string;
+    uploadedAt: string;
+    detectedColumns: {
+      dimensions: {
+        product: string[];
+        location: string[];
+        time: string[];
+      };
+      metrics: string[];
+      external_drivers: string[];
+    };
+  };
   onSchemaComplete: () => void;
 }
 
@@ -16,11 +30,17 @@ const SchemaMapping = ({ uploadedData, onSchemaComplete }: SchemaMappingProps) =
   const [mappings, setMappings] = useState<Record<string, string>>({});
   const [validationResults, setValidationResults] = useState<any>(null);
 
-  // Sample detected columns from uploaded data
+  useEffect(() => {
+    console.log('SchemaMapping received data:', uploadedData);
+  }, [uploadedData]);
+
+  // Get all detected columns from the uploaded data
   const detectedColumns = [
-    "product_id", "sku", "store_id", "location", "date", "week_ending",
-    "sales_qty", "sales_value", "inventory", "price", "promotion_flag",
-    "discount_pct", "category", "brand", "region"
+    ...uploadedData.detectedColumns.dimensions.product,
+    ...uploadedData.detectedColumns.dimensions.location,
+    ...uploadedData.detectedColumns.dimensions.time,
+    ...uploadedData.detectedColumns.metrics,
+    ...uploadedData.detectedColumns.external_drivers
   ];
 
   const schemaCategories = [
@@ -30,12 +50,9 @@ const SchemaMapping = ({ uploadedData, onSchemaComplete }: SchemaMappingProps) =
       icon: Database,
       description: "Core business dimensions for hierarchical forecasting",
       fields: [
-        { id: "product", label: "Product Identifier", required: true, suggestions: ["product_id", "sku"] },
-        { id: "location", label: "Location Identifier", required: true, suggestions: ["store_id", "location"] },
-        { id: "time", label: "Time Identifier", required: true, suggestions: ["date", "week_ending"] },
-        { id: "category", label: "Product Category", required: false, suggestions: ["category"] },
-        { id: "brand", label: "Product Brand", required: false, suggestions: ["brand"] },
-        { id: "region", label: "Geographic Region", required: false, suggestions: ["region"] },
+        { id: "product", label: "Product Identifier", required: true, suggestions: uploadedData.detectedColumns.dimensions.product },
+        { id: "location", label: "Location Identifier", required: true, suggestions: uploadedData.detectedColumns.dimensions.location },
+        { id: "time", label: "Time Identifier", required: true, suggestions: uploadedData.detectedColumns.dimensions.time },
       ]
     },
     {
@@ -44,9 +61,7 @@ const SchemaMapping = ({ uploadedData, onSchemaComplete }: SchemaMappingProps) =
       icon: TrendingUp,
       description: "Quantitative measures to forecast",
       fields: [
-        { id: "target_metric", label: "Primary Target Metric", required: true, suggestions: ["sales_qty", "sales_value"] },
-        { id: "inventory", label: "Inventory/Stock Level", required: false, suggestions: ["inventory"] },
-        { id: "price", label: "Price", required: false, suggestions: ["price"] },
+        { id: "target_metric", label: "Primary Target Metric", required: true, suggestions: uploadedData.detectedColumns.metrics },
       ]
     },
     {
@@ -55,18 +70,18 @@ const SchemaMapping = ({ uploadedData, onSchemaComplete }: SchemaMappingProps) =
       icon: MapPin,
       description: "External factors that influence forecasts",
       fields: [
-        { id: "promotion", label: "Promotion Flag", required: false, suggestions: ["promotion_flag"] },
-        { id: "discount", label: "Discount Percentage", required: false, suggestions: ["discount_pct"] },
-        { id: "events", label: "Events/Holidays", required: false, suggestions: [] },
+        { id: "external_driver", label: "External Driver", required: false, suggestions: uploadedData.detectedColumns.external_drivers },
       ]
     }
   ];
 
   const handleMappingChange = (fieldId: string, columnName: string) => {
+    console.log('Mapping changed:', { fieldId, columnName });
     setMappings(prev => ({ ...prev, [fieldId]: columnName }));
   };
 
   const validateSchema = () => {
+    console.log('Validating schema with mappings:', mappings);
     const requiredFields = schemaCategories
       .flatMap(cat => cat.fields)
       .filter(field => field.required)
@@ -244,7 +259,7 @@ const SchemaMapping = ({ uploadedData, onSchemaComplete }: SchemaMappingProps) =
 
       {/* Actions */}
       <div className="flex justify-between">
-        <Button variant="outline">
+        <Button variant="outline" onClick={() => setMappings({})}>
           Reset Mappings
         </Button>
         <Button onClick={validateSchema} disabled={Object.keys(mappings).length === 0}>

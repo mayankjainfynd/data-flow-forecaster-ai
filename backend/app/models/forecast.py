@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, JSON, DateTime, Float
 from sqlalchemy.orm import relationship
 from app.models.base import BaseModel
+from app.models.forecast_result import ForecastResult  # Import at the top
 
 class Forecast(BaseModel):
     __tablename__ = "forecasts"

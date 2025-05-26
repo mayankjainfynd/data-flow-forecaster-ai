@@ -8,7 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import DataUpload from "./components/DataUpload";
 import AuthContainer from "./components/AuthContainer";
-import ColumnMapping from "./components/ColumnMapping";
+import SchemaMapping from "./components/SchemaMapping";
 import axios from "axios";
 
 const queryClient = new QueryClient();
@@ -43,6 +43,7 @@ function App() {
 
   // Step 1: Data upload
   const handleDataUploaded = (data: any) => {
+    console.log('Data uploaded in App:', data);
     setUploadedData(data);
     setMappingSaved(false);
     setSchemaMappingId(null);
@@ -123,9 +124,12 @@ function App() {
             <DataUpload onDataUploaded={handleDataUploaded} />
           )}
           {uploadedData && !mappingSaved && (
-            <ColumnMapping
-              detectedColumns={uploadedData.detectedColumns.columns || []}
-              onMappingSubmit={handleMappingSubmit}
+            <SchemaMapping
+              uploadedData={uploadedData}
+              onSchemaComplete={() => {
+                setMappingSaved(true);
+                handleMappingSubmit({}); // You'll need to pass the actual mappings here
+              }}
             />
           )}
           {mappingSaved && !forecastResult && (

@@ -24,16 +24,36 @@ async def detect_columns(
         raise HTTPException(status_code=400, detail="Unsupported file format")
     
     try:
-        if file.filename.endswith('.csv'):
-            df = pd.read_csv(file.file)
-        elif file.filename.endswith('.xlsx'):
-            df = pd.read_excel(file.file)
-        else:
-            df = pd.read_parquet(file.file)
+        # Read the file content
+        content = await file.read()
         
+        # Create a temporary file-like object
+        import io
+        file_obj = io.BytesIO(content)
+        
+        # Read the data based on file type
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(file_obj)
+        elif file.filename.endswith('.xlsx'):
+            df = pd.read_excel(file_obj)
+        else:
+            df = pd.read_parquet(file_obj)
+        
+        # Close the file
+        await file.close()
+        
+        # Detect columns
         suggestions = SchemaMappingService.detect_columns(df)
-        return suggestions
+        
+        # Convert to response model
+        return ColumnDetectionResponse(
+            dimensions=suggestions["dimensions"],
+            metrics=suggestions["metrics"],
+            external_drivers=suggestions["external_drivers"]
+        )
     except Exception as e:
+        # Ensure file is closed even if there's an error
+        await file.close()
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/mappings", response_model=SchemaMappingResponse)

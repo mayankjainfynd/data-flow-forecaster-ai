@@ -9,9 +9,10 @@ import axios from "axios";
 
 interface DataUploadProps {
   onDataUploaded: (data: any) => void;
+  onUploadComplete?: () => void;
 }
 
-const DataUpload = ({ onDataUploaded }: DataUploadProps) => {
+const DataUpload = ({ onDataUploaded, onUploadComplete }: DataUploadProps) => {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -92,8 +93,17 @@ const DataUpload = ({ onDataUploaded }: DataUploadProps) => {
         size: file.size,
         type: file.type,
         uploadedAt: new Date().toISOString(),
-        detectedColumns: response.data
+        detectedColumns: {
+          dimensions: response.data.dimensions,
+          metrics: response.data.metrics,
+          external_drivers: response.data.external_drivers
+        }
       });
+
+      // Call onUploadComplete if provided
+      if (onUploadComplete) {
+        onUploadComplete();
+      }
     } catch (error: any) {
       setUploading(false);
       if (error.response?.status === 401) {
