@@ -21,12 +21,14 @@ interface SchemaMappingProps {
       };
       metrics: string[];
       external_drivers: string[];
+      all_columns?: string[];
     };
   };
   onSchemaComplete: () => void;
+  onBack: () => void;
 }
 
-const SchemaMapping = ({ uploadedData, onSchemaComplete }: SchemaMappingProps) => {
+const SchemaMapping = ({ uploadedData, onSchemaComplete, onBack }: SchemaMappingProps) => {
   const [mappings, setMappings] = useState<Record<string, string>>({});
   const [validationResults, setValidationResults] = useState<any>(null);
 
@@ -34,8 +36,8 @@ const SchemaMapping = ({ uploadedData, onSchemaComplete }: SchemaMappingProps) =
     console.log('SchemaMapping received data:', uploadedData);
   }, [uploadedData]);
 
-  // Get all detected columns from the uploaded data
-  const detectedColumns = [
+  // Get all columns from the uploaded data (from backend)
+  const allColumns = uploadedData.detectedColumns.all_columns || [
     ...uploadedData.detectedColumns.dimensions.product,
     ...uploadedData.detectedColumns.dimensions.location,
     ...uploadedData.detectedColumns.dimensions.time,
@@ -77,7 +79,13 @@ const SchemaMapping = ({ uploadedData, onSchemaComplete }: SchemaMappingProps) =
 
   const handleMappingChange = (fieldId: string, columnName: string) => {
     console.log('Mapping changed:', { fieldId, columnName });
-    setMappings(prev => ({ ...prev, [fieldId]: columnName }));
+    if (columnName === "none") {
+      const newMappings = { ...mappings };
+      delete newMappings[fieldId];
+      setMappings(newMappings);
+    } else {
+      setMappings(prev => ({ ...prev, [fieldId]: columnName }));
+    }
   };
 
   const validateSchema = () => {
@@ -94,7 +102,7 @@ const SchemaMapping = ({ uploadedData, onSchemaComplete }: SchemaMappingProps) =
       isValid: missingRequired.length === 0,
       missingRequired,
       mappedCount,
-      totalDetected: detectedColumns.length,
+      totalDetected: allColumns.length,
       warnings: mappedCount < 4 ? ["Consider mapping more fields for better forecast accuracy"] : []
     };
 
@@ -151,7 +159,7 @@ const SchemaMapping = ({ uploadedData, onSchemaComplete }: SchemaMappingProps) =
             </div>
             <div>
               <p className="text-sm text-slate-500">Detected Columns</p>
-              <p className="font-medium">{detectedColumns.length}</p>
+              <p className="font-medium">{allColumns.length}</p>
             </div>
             <div>
               <p className="text-sm text-slate-500">File Size</p>
@@ -205,8 +213,8 @@ const SchemaMapping = ({ uploadedData, onSchemaComplete }: SchemaMappingProps) =
                         <SelectValue placeholder="Select column..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No mapping</SelectItem>
-                        {detectedColumns.map((column) => (
+                        <SelectItem value="none">No mapping</SelectItem>
+                        {allColumns.map((column) => (
                           <SelectItem key={column} value={column}>
                             {column}
                           </SelectItem>
@@ -259,9 +267,14 @@ const SchemaMapping = ({ uploadedData, onSchemaComplete }: SchemaMappingProps) =
 
       {/* Actions */}
       <div className="flex justify-between">
-        <Button variant="outline" onClick={() => setMappings({})}>
-          Reset Mappings
-        </Button>
+        <div className="space-x-4">
+          <Button variant="outline" onClick={onBack}>
+            Back to Upload
+          </Button>
+          <Button variant="outline" onClick={() => setMappings({})}>
+            Reset Mappings
+          </Button>
+        </div>
         <Button onClick={validateSchema} disabled={Object.keys(mappings).length === 0}>
           Validate & Continue
         </Button>

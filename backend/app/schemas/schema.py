@@ -6,6 +6,7 @@ class ColumnDetectionResponse(BaseModel):
     dimensions: Dict[str, List[str]]
     metrics: List[str]
     external_drivers: List[str]
+    all_columns: List[str]
 
 class SchemaMappingBase(BaseModel):
     name: str

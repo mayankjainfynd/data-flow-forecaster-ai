@@ -93,11 +93,7 @@ const DataUpload = ({ onDataUploaded, onUploadComplete }: DataUploadProps) => {
         size: file.size,
         type: file.type,
         uploadedAt: new Date().toISOString(),
-        detectedColumns: {
-          dimensions: response.data.dimensions,
-          metrics: response.data.metrics,
-          external_drivers: response.data.external_drivers
-        }
+        detectedColumns: response.data
       });
 
       // Call onUploadComplete if provided

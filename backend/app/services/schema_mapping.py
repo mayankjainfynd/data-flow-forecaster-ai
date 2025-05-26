@@ -14,7 +14,8 @@ class SchemaMappingService:
                 "time": []
             },
             "metrics": [],
-            "external_drivers": []
+            "external_drivers": [],
+            "all_columns": list(df.columns)
         }
         
         # Detect time columns

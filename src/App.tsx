@@ -130,6 +130,11 @@ function App() {
                 setMappingSaved(true);
                 handleMappingSubmit({}); // You'll need to pass the actual mappings here
               }}
+              onBack={() => {
+                setUploadedData(null);
+                setMappingSaved(false);
+                setSchemaMappingId(null);
+              }}
             />
           )}
           {mappingSaved && !forecastResult && (

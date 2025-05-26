@@ -49,7 +49,8 @@ async def detect_columns(
         return ColumnDetectionResponse(
             dimensions=suggestions["dimensions"],
             metrics=suggestions["metrics"],
-            external_drivers=suggestions["external_drivers"]
+            external_drivers=suggestions["external_drivers"],
+            all_columns=suggestions["all_columns"]
         )
     except Exception as e:
         # Ensure file is closed even if there's an error
