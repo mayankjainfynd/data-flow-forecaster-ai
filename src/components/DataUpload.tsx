@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Upload, FileSpreadsheet, Database, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import axios from "axios";
 
 interface DataUploadProps {
   onDataUploaded: (data: any) => void;
@@ -16,6 +16,11 @@ const DataUpload = ({ onDataUploaded }: DataUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+
+  // Get token from localStorage
+  const getToken = () => {
+    return localStorage.getItem('token');
+  };
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -38,28 +43,66 @@ const DataUpload = ({ onDataUploaded }: DataUploadProps) => {
   }, []);
 
   const handleFileUpload = async (file: File) => {
-    setUploading(true);
-    setUploadProgress(0);
-    setUploadedFile(file);
+    try {
+      const token = getToken();
+      if (!token) {
+        toast.error("Please login first");
+        return;
+      }
 
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setUploading(false);
-          toast.success("File uploaded successfully!");
-          onDataUploaded({
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            uploadedAt: new Date().toISOString(),
-          });
-          return 100;
-        }
-        return prev + 10;
+      setUploading(true);
+      setUploadProgress(0);
+      setUploadedFile(file);
+
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Upload file and detect columns
+      const response = await axios.post('http://localhost:8001/api/v1/schema/detect-columns', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        },
+        onUploadProgress: (progressEvent) => {
+          const progress = progressEvent.total
+            ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+            : 0;
+          setUploadProgress(progress);
+        },
       });
-    }, 200);
+
+      setUploading(false);
+      toast.success("File uploaded and analyzed successfully!");
+      
+      // Log the uploaded file data
+      console.log('Uploaded File Data:', {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        uploadedAt: new Date().toISOString()
+      });
+
+      // Log the detected columns
+      console.log('Detected Columns:', response.data);
+      
+      // Call the parent component's callback with the detected columns
+      onDataUploaded({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        uploadedAt: new Date().toISOString(),
+        detectedColumns: response.data
+      });
+    } catch (error: any) {
+      setUploading(false);
+      if (error.response?.status === 401) {
+        toast.error("Please login first");
+      } else {
+        toast.error("Error uploading file. Please try again.");
+      }
+      console.error('Upload error:', error);
+    }
   };
 
   const supportedFormats = [
