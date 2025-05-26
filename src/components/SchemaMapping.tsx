@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -168,7 +167,7 @@ const SchemaMapping = ({ uploadedData, onSchemaComplete }: SchemaMappingProps) =
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
                       <h4 className="font-medium text-slate-900">{field.label}</h4>
-                      {field.required && <Badge variant="destructive" size="sm">Required</Badge>}
+                      {field.required && <Badge variant="destructive">Required</Badge>}
                       {getFieldStatus(field) === "success" && (
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       )}
